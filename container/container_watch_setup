@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+set -euo pipefail
+
+print() {
+    printf "%s\n" "$1" #
+}
+
+dnf install -y podman-remote
+for usrrun in $(ls /run/user/); do
+    if [ -d "/run/user/$usrrun" ]; then
+        user=$(ls -la /run/user/$usrrun | head -n +2 | awk '{print $3}' )
+        print "Adding connection for $user"
+        podman-remote system connection add $user "unix://nf/run/user/$usrrun/docker.sock"
+
+    fi
+done

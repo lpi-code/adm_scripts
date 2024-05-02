@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Show all running containers using remote-podman
+show_remote() {
+    podman-remote -c $1 ps -a --format "table {{.Names}};{{.Image}};{{.Status}};$1"
+}
+
+show_all_remotes() {
+    first_line=true
+    for remote in $(podman-remote system connection list | awk '{print $1}' | tail -n +2); do
+    show_remote $remote | tail -n +2
+    done
+    # show output as a table like Names | Image | Status
+    #
+
+}
+
+color_formating() {
+    GREEN='\033[0;32m'
+    NC='\033[0m'
+    RED='\033[0;31m'
+    YELLOW='\033[0;33m'
+    while read line; do
+        if [[ $line == *"Up"* ]]; then
+            echo -e "${GREEN}$line${NC}"
+        elif [[ $line == *"Exited"* ]]; then
+            echo -e "${RED}$line${NC}"
+        elif [[ $line == *"Created"* ]]; then
+            echo -e "${YELLOW}$line${NC}"
+        else
+            echo $line
+        fi
+    done
+}
+
+output=$(show_all_remotes | column -t -s ";" -o " | " --table-columns "NAMES,IMAGE,STATUS,REMOTE")
+echo "$output" | head -n 1
+echo "$output"| tail -n +2 | color_formating
